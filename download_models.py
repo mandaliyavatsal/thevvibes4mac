@@ -1,6 +1,6 @@
 import os
 from huggingface_hub import hf_hub_download
-import PySimpleGUI as sg
+import wx
 
 def download_models(model_dir):
     model_ids = [
@@ -11,14 +11,19 @@ def download_models(model_dir):
     if not os.path.exists(model_dir):
         os.makedirs(model_dir)
 
-    layout = [
-        [sg.Text("Downloading models, please wait...")],
-        [sg.ProgressBar(len(model_ids), orientation='h', size=(20, 20), key='-PROGRESS-')]
-    ]
+    app = wx.App(False)
+    frame = wx.Frame(None, wx.ID_ANY, "Downloading Models", size=(400, 200))
+    panel = wx.Panel(frame, wx.ID_ANY)
 
-    window = sg.Window("Downloading Models", layout)
+    sizer = wx.BoxSizer(wx.VERTICAL)
+    text = wx.StaticText(panel, label="Downloading models, please wait...")
+    sizer.Add(text, 0, wx.ALL | wx.CENTER, 5)
 
-    progress_bar = window['-PROGRESS-']
+    progress_bar = wx.Gauge(panel, range=len(model_ids), size=(250, 25))
+    sizer.Add(progress_bar, 0, wx.ALL | wx.CENTER, 5)
+
+    panel.SetSizer(sizer)
+    frame.Show(True)
 
     for i, model_id in enumerate(model_ids):
         try:
@@ -26,26 +31,35 @@ def download_models(model_dir):
             print(f"Downloaded {model_id} to {model_path}")
         except Exception as e:
             print(f"Failed to download {model_id}: {e}")
-        progress_bar.UpdateBar(i + 1)
-        window.refresh()
+        progress_bar.SetValue(i + 1)
+        wx.Yield()
 
-    window.close()
+    wx.MessageBox("Models downloaded successfully!", "Info", wx.OK | wx.ICON_INFORMATION)
+    frame.Close()
 
 if __name__ == "__main__":
-    layout = [
-        [sg.Text("Select Models Directory")],
-        [sg.Input(key="-FOLDER-"), sg.FolderBrowse()],
-        [sg.Button("Download Models")]
-    ]
+    app = wx.App(False)
+    frame = wx.Frame(None, wx.ID_ANY, "The Vibes for Mac", size=(400, 200))
+    panel = wx.Panel(frame, wx.ID_ANY)
 
-    window = sg.Window("The Vibes for Mac", layout)
+    sizer = wx.BoxSizer(wx.VERTICAL)
 
-    while True:
-        event, values = window.read()
-        if event == sg.WIN_CLOSED:
-            break
-        if event == "Download Models":
-            model_dir = values["-FOLDER-"]
-            download_models(model_dir)
+    text = wx.StaticText(panel, label="Select Models Directory")
+    sizer.Add(text, 0, wx.ALL | wx.CENTER, 5)
 
-    window.close()
+    dir_picker = wx.DirPickerCtrl(panel, message="Select Models Directory")
+    sizer.Add(dir_picker, 0, wx.ALL | wx.EXPAND, 5)
+
+    download_button = wx.Button(panel, label="Download Models")
+    sizer.Add(download_button, 0, wx.ALL | wx.CENTER, 5)
+
+    panel.SetSizer(sizer)
+
+    def on_download(event):
+        model_dir = dir_picker.GetPath()
+        download_models(model_dir)
+
+    download_button.Bind(wx.EVT_BUTTON, on_download)
+
+    frame.Show(True)
+    app.MainLoop()
