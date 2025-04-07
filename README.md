@@ -14,7 +14,11 @@ The native macOS Apple M1 app downloads the required open source AI models when 
    ```
    cd thevvibes4mac
    ```
-3. Run the app:
+3. Install the dependencies:
+   ```
+   pip install -r requirements.txt
+   ```
+4. Run the app:
    ```
    python main.py
    ```
